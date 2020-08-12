@@ -6,7 +6,7 @@ plugins {
 
 fluidLibrary(name = "locale", version = "0.9.0")
 
-fluidLibraryModule(description = "Multiplatform Locale support") {
+fluidLibraryModule(description = "Kotlin multiplatform locale library") {
 	targets {
 		common {
 			dependencies {
