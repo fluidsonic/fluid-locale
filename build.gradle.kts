@@ -1,7 +1,7 @@
 import io.fluidsonic.gradle.*
 
 plugins {
-	id("io.fluidsonic.gradle") version "1.1.4"
+	id("io.fluidsonic.gradle") version "1.1.5"
 }
 
 fluidLibrary(name = "locale", version = "0.9.0")
