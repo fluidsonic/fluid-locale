@@ -22,7 +22,7 @@ Installation
 `build.gradle.kts`:
 ```kotlin
 dependencies {
-    implementation("io.fluidsonic.locale:fluid-locale:0.9.0")
+    implementation("io.fluidsonic.locale:fluid-locale:0.9.1")
 }
 ```
 
