@@ -1,13 +1,8 @@
 package io.fluidsonic.locale
 
-import kotlinx.serialization.*
-import kotlinx.serialization.descriptors.*
-import kotlinx.serialization.encoding.*
 
-
-@Serializable(with = LocaleSerializer::class)
 public class Locale internal constructor(
-	internal val platform: Any
+	public val tag: LanguageTag
 ) {
 
 	init {
@@ -16,42 +11,37 @@ public class Locale internal constructor(
 
 
 	override fun equals(other: Any?): Boolean =
-		this === other || (other is Locale && platform == other.platform)
+		this === other || (other is Locale && tag == other.tag)
 
 
 	override fun hashCode(): Int =
-		platform.hashCode()
+		tag.hashCode()
 
 
 	override fun toString(): String =
-		serializeLocale(this)
+		tag.toString()
 
 
 	public companion object {
 
-		public fun parseOrNull(tag: String): Locale? =
-			parseLocaleOrNull(tag)
+
+		public fun forTag(tag: LanguageTag): Locale =
+			forTagOrNull(tag) ?: error("Invalid ISO 4217 currency code: $tag")
+
+
+		public fun forTagOrNull(tag: LanguageTag): Locale? =
+			localeForLanguageTagOrNull(tag)
+
+
+		public fun forTag(tag: String): Locale =
+			forTagOrNull(LanguageTag.parse(tag)) ?: error("Invalid BCP 47 language tag: $tag")
+
+
+		public fun forTagOrNull(tag: String): Locale? =
+			LanguageTag.parseOrNull(tag)?.let(::forTagOrNull)
 	}
 }
 
 
-@Serializer(forClass = Locale::class)
-internal object LocaleSerializer : KSerializer<Locale> {
-
-	override val descriptor = PrimitiveSerialDescriptor("io.fluidsonic.locale.Locale", PrimitiveKind.STRING)
-
-
-	override fun deserialize(decoder: Decoder) =
-		decoder.decodeString().let { tag ->
-			Locale.parseOrNull(tag) ?: throw SerializationException("Invalid Locale tag: $tag")
-		}
-
-
-	override fun serialize(encoder: Encoder, value: Locale) {
-		encoder.encodeString(value.toString())
-	}
-}
-
-
-internal expect fun parseLocaleOrNull(tag: String): Locale?
-internal expect fun serializeLocale(locale: Locale): String
+internal expect fun languageTagForLocale(locale: Locale): LanguageTag
+internal expect fun localeForLanguageTagOrNull(tag: LanguageTag): Locale?
