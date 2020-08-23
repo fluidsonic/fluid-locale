@@ -7,10 +7,7 @@ fluid-locale
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.4.0%20(Darwin,%20JVM,%20JS)-blue.svg)](https://github.com/JetBrains/kotlin/releases/v1.4.0)
 [![#fluid-libraries Slack Channel](https://img.shields.io/badge/slack-%23fluid--libraries-543951.svg?label=Slack)](https://kotlinlang.slack.com/messages/C7UDFSVT2/)
 
-Kotlin multiplatform `Locale` support.
-
-This library is very early stage and can't do much yet beside wrapping and normalizing BCP 47 language tags.  
-Parsing varies between platforms and validation is not yet consistent either.
+Kotlin multiplatform `Locale` support. **Experimental**
 
 **Feel free to contribute!**
 
@@ -31,43 +28,54 @@ dependencies {
 Usage
 -----
 
-```kotlin
-println(Locale.fromTag("en-US").toString()) // en-US
-```
-
 ### `class Locale`
 
-A class with information about a specific locale defined by [BCP 47](https://tools.ietf.org/html/bcp47).
+For now this is only a thin layer over a `LanguageTag`. To be improved.
 
 ```kotlin
-val locale = Locale.forTag("en-US") // throws if tag is invalid (as per BCP 47) or has an invalid format [validation not yet implemented]
-println(locale.tag) // en-US
+val locale = Locale.forLanguageTag("en-us") // throws if tag is not well-formed
+println(locale.language) // en
+println(locale.region) // en-US
+println(locale.toLanguageTag()) // en-US
 ```
 
 ```kotlin
-val locale = Locale.forTagOrNull("this-is-not-valid") // null if tag is invalid (as per BCP 47) or has an invalid format [validation not yet implemented]
-println(currency) // null [validation not yet implemented]
+val locale = Locale.forLanguageTagOrNull("a-b-c-1-2-3") // null if tag is not well-formed
+println(locale) // null
+```
+
+```kotlin
+val locale = Locale.forLanguage("en", region = "US")
+println(locale.language) // en
+println(locale.region) // en-US
+println(locale.toLanguageTag()) // en-US
 ```
 
 ### `class LanguageTag`
 
-An inline class for BCP 47 language tags (e.g. `en`, `en-US` or `sl-IT-nedis`).
+A class for BCP 47 language tags (e.g. `en`, `en-US` or `sl-IT-nedis`).
 
 ```kotlin
-val tag = LanguageTag.parse("en-US") // throws if tag has invalid format [validation not yet implemented]
-println(tag.toString()) // en-US
-println(tag.isValid()) // true [validation not yet implemented]
+val tag = LanguageTag.parse("ZH-HANT-cn-somevar") // throws if tag is not well-formed
+println(tag.language) // zh
+println(tag.script) // Hant
+println(tag.region) // CN
+println(tag.variants) // [somevar]
+println(tag.toString()) // zh-Hant-CN-somevar
 ```
 
 ```kotlin
-val tag = LanguageTag.parse("ar-a-aaa-b-bbb-a-ccc") // throws if tag has invalid format [validation not yet implemented]
-println(tag.toString()) // ABC
-println(tag.isValid()) // false [validation not yet implemented]
-```
-
-```kotlin
-val tag = LanguageTag.parseOrNull("ar-a-aaa-b-bbb-a-ccc") // null if tag has invalid format [validation not yet implemented]
+val tag = LanguageTag.parseOrNull("a-b-c-1-2-3") // null if tag is not well-formed
 println(tag) // null
+```
+
+```kotlin
+val tag = LanguageTag.forLanguage("ZH", script = "HANT", region = "cn", variants = listOf("somevar"))
+println(tag.language) // zh
+println(tag.script) // Hant
+println(tag.region) // CN
+println(tag.variants) // [somevar]
+println(tag.toString()) // zh-Hant-CN-somevar
 ```
 
 

@@ -6,17 +6,23 @@ import platform.Foundation.*
 internal typealias PlatformLocale = NSLocale
 
 
-internal actual fun localeForLanguageTagOrNull(tag: LanguageTag): Locale? =
-	PlatformLocale(tag.toString()).toCommon()
+public fun PlatformLocale.toCommon(): Locale {
+	val tag = localeIdentifier.replace('_', '-')
+
+	return Locale.forLanguageTag(when {
+		tag.isEmpty() -> LanguageTag.undeterminedPrefix
+		tag.startsWith("-") -> "${LanguageTag.undeterminedPrefix}$tag"
+		else -> tag
+	})
+}
 
 
-internal actual fun languageTagForLocale(locale: Locale): LanguageTag =
-	LanguageTag(locale.toPlatform().localeIdentifier)
+public fun Locale.toPlatform(): PlatformLocale {
+	val tag = toLanguageTag().toString()
 
-
-public fun PlatformLocale.toCommon(): Locale =
-	Locale(tag = LanguageTag.parse(localeIdentifier))
-
-
-public fun Locale.toPlatform(): PlatformLocale =
-	PlatformLocale(tag.toString())
+	return PlatformLocale(when {
+		tag == LanguageTag.undeterminedPrefix -> ""
+		tag.startsWith("${LanguageTag.undeterminedPrefix}-") -> tag.removePrefix(LanguageTag.undeterminedPrefix)
+		else -> tag
+	})
+}

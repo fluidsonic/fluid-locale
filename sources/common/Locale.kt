@@ -1,8 +1,8 @@
 package io.fluidsonic.locale
 
 
-public class Locale internal constructor(
-	public val tag: LanguageTag
+public class Locale private constructor(
+	private val languageTag: LanguageTag,
 ) {
 
 	init {
@@ -11,37 +11,91 @@ public class Locale internal constructor(
 
 
 	override fun equals(other: Any?): Boolean =
-		this === other || (other is Locale && tag == other.tag)
+		this === other || (other is Locale && languageTag == other.languageTag)
 
 
 	override fun hashCode(): Int =
-		tag.hashCode()
+		languageTag.hashCode()
+
+
+	public val language: String?
+		get() = when (val language = languageTag.language) {
+			LanguageTag.undeterminedPrefix -> null
+			else -> language
+		}
+
+
+	public val region: String?
+		get() = languageTag.region
+
+
+	public val script: String?
+		get() = languageTag.script
+
+
+	public val variants: List<String>
+		get() = languageTag.variants
+
+
+	public fun toLanguageTag(): LanguageTag =
+		languageTag
 
 
 	override fun toString(): String =
-		tag.toString()
+		languageTag.toString()
 
 
 	public companion object {
 
-
-		public fun forTag(tag: LanguageTag): Locale =
-			forTagOrNull(tag) ?: error("Invalid ISO 4217 currency code: $tag")
+		public val root: Locale = Locale(languageTag = LanguageTag.forLanguage(language = LanguageTag.undeterminedPrefix))
 
 
-		public fun forTagOrNull(tag: LanguageTag): Locale? =
-			localeForLanguageTagOrNull(tag)
+		public fun forLanguage(
+			language: String?,
+			script: String? = null,
+			region: String? = null,
+			variants: List<String> = emptyList(),
+		): Locale =
+			forLanguageTag(LanguageTag.forLanguage(
+				language = when (language) {
+					null, "" -> LanguageTag.undeterminedPrefix
+					else -> language
+				},
+				script = script,
+				region = region,
+				variants = variants,
+			))
 
 
-		public fun forTag(tag: String): Locale =
-			forTagOrNull(LanguageTag.parse(tag)) ?: error("Invalid BCP 47 language tag: $tag")
+		public fun forLanguageOrNull(
+			language: String?,
+			script: String? = null,
+			region: String? = null,
+			variants: List<String> = emptyList(),
+		): Locale? =
+			LanguageTag.forLanguageOrNull(
+				language = when (language) {
+					null, "" -> LanguageTag.undeterminedPrefix
+					else -> language
+				},
+				script = script,
+				region = region,
+				variants = variants,
+			)?.let(::forLanguageTag)
 
 
-		public fun forTagOrNull(tag: String): Locale? =
-			LanguageTag.parseOrNull(tag)?.let(::forTagOrNull)
+		public fun forLanguageTag(tag: LanguageTag): Locale =
+			when (tag) {
+				root.languageTag -> root
+				else -> Locale(languageTag = tag)
+			}
+
+
+		public fun forLanguageTag(tag: String): Locale =
+			forLanguageTag(LanguageTag.parse(tag))
+
+
+		public fun forLanguageTagOrNull(tag: String): Locale? =
+			LanguageTag.parseOrNull(tag)?.let(::forLanguageTag)
 	}
 }
-
-
-internal expect fun languageTagForLocale(locale: Locale): LanguageTag
-internal expect fun localeForLanguageTagOrNull(tag: LanguageTag): Locale?
