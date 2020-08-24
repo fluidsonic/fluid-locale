@@ -148,11 +148,6 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 		private val languageMaps: Map<String?, LanguageMap<Key, Value>>?,
 	) : LocalizedValueResolver<Key, Value> {
 
-		init {
-			freeze()
-		}
-
-
 		@Suppress("NAME_SHADOWING")
 		override fun resolve(key: Key, language: String?, script: String?, region: String?, variants: List<String>): Value? {
 			val language = LanguageTag.canonicalizeLanguage(language)
