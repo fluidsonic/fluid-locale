@@ -34,7 +34,7 @@ For now this is only a thin layer over a `LanguageTag`. To be improved.
 ```kotlin
 val locale = Locale.forLanguageTag("en-us") // throws if tag is not well-formed
 println(locale.language) // en
-println(locale.region) // en-US
+println(locale.region) // US
 println(locale.toLanguageTag()) // en-US
 ```
 
@@ -46,7 +46,7 @@ println(locale) // null
 ```kotlin
 val locale = Locale.forLanguage("en", region = "US")
 println(locale.language) // en
-println(locale.region) // en-US
+println(locale.region) // US
 println(locale.toLanguageTag()) // en-US
 ```
 
