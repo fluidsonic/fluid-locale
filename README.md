@@ -7,9 +7,8 @@ fluid-locale
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.4.0%20(Darwin,%20JVM,%20JS)-blue.svg)](https://github.com/JetBrains/kotlin/releases/v1.4.0)
 [![#fluid-libraries Slack Channel](https://img.shields.io/badge/slack-%23fluid--libraries-543951.svg?label=Slack)](https://kotlinlang.slack.com/messages/C7UDFSVT2/)
 
-Kotlin multiplatform `Locale` support. **Experimental**
-
-**Feel free to contribute!**
+Kotlin multiplatform locale library.  
+**Experimental. Feel free to contribute!**
 
 
 
