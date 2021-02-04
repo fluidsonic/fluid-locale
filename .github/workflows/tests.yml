@@ -12,7 +12,7 @@ jobs:
       - run: sudo xcode-select -switch /Applications/Xcode_12.app
       - run: xcodebuild -version
       - run: xcrun simctl list
-      - run: ./gradlew iosX64Test macosX64Test tvosX64Test watchosX86Test
+      - run: ./gradlew iosX64Test macosX64Test tvosX64Test watchosX64Test watchosX86Test
   js:
     name: JS
     runs-on: ubuntu-latest
