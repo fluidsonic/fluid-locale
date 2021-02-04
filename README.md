@@ -19,7 +19,8 @@ Installation
 
 ```kotlin
 dependencies {
-	implementation("io.fluidsonic.locale:fluid-locale:0.9.4")
+	implementation("io.fluidsonic.locale:fluid-locale:0.9.5-kotlin-1.5") // Kotlin 1.4.30 (language version 1.5)
+	implementation("io.fluidsonic.locale:fluid-locale:0.9.4")            // Kotlin 1.4.*
 }
 ```
 
