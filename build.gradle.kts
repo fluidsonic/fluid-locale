@@ -2,7 +2,7 @@ import io.fluidsonic.gradle.*
 import org.jetbrains.kotlin.gradle.plugin.*
 
 plugins {
-	id("io.fluidsonic.gradle") version "1.1.22"
+	id("io.fluidsonic.gradle") version "1.1.23"
 }
 
 fluidLibrary(name = "locale", version = "0.9.6")
