@@ -18,7 +18,7 @@ Installation
 
 ```kotlin
 dependencies {
-	implementation("io.fluidsonic.locale:fluid-locale:0.9.6")
+	implementation("io.fluidsonic.locale:fluid-locale:0.10.0")
 }
 ```
 
