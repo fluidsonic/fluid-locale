@@ -17,11 +17,6 @@ public class LanguageTag private constructor(
 	public val variants: List<String>,
 ) {
 
-	init {
-		freeze()
-	}
-
-
 	public fun copy(
 		extensions: List<String> = this.extensions,
 		extlangs: List<String> = this.extlangs,

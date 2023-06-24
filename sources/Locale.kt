@@ -5,11 +5,6 @@ public class Locale private constructor(
 	private val languageTag: LanguageTag,
 ) {
 
-	init {
-		freeze()
-	}
-
-
 	override fun equals(other: Any?): Boolean =
 		this === other || (other is Locale && languageTag == other.languageTag)
 
