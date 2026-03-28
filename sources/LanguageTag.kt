@@ -2,21 +2,35 @@ package io.fluidsonic.locale
 
 
 /**
- * A BCP 47 language tag, for example `en`, `en-US` or `sl-IT-nedis`.
+ * A parsed BCP 47 language tag, for example `en`, `en-US` or `sl-IT-nedis`.
+ *
+ * Supports the full RFC 5646 grammar including language, script, region, variants, extensions, extlangs, and private-use subtags.
+ * Grandfathered tags are normalized to their modern equivalents during parsing.
+ *
+ * Use [parse] or [forLanguage] to create instances.
  *
  * References:
- * - [https://tools.ietf.org/html/bcp47]
+ * - [RFC 5646](https://tools.ietf.org/html/rfc5646)
+ * - [BCP 47](https://tools.ietf.org/html/bcp47)
  */
 public class LanguageTag private constructor(
+	/** Extension subtags, each as a singleton followed by its subtags (e.g. `u-co-phonebk`). Sorted and lowercased. */
 	public val extensions: List<String>,
+	/** Extended language subtags (ISO 639 codes). */
 	public val extlangs: List<String>,
+	/** Primary language subtag (ISO 639), or `null` for private-use-only tags. Lowercased. */
 	public val language: String?,
+	/** Private-use subtag sequence (e.g. `x-custom`), or `null` if absent. Lowercased. */
 	public val privateuse: String?,
+	/** Region subtag (ISO 3166-1 alpha-2 or UN M.49), or `null` if absent. Uppercased. */
 	public val region: String?,
+	/** Script subtag (ISO 15924), or `null` if absent. Title-cased. */
 	public val script: String?,
+	/** Variant subtags as defined in the IANA subtag registry. */
 	public val variants: List<String>,
 ) {
 
+	/** Creates a copy of this tag with the specified subtags replaced. */
 	public fun copy(
 		extensions: List<String> = this.extensions,
 		extlangs: List<String> = this.extlangs,
@@ -38,8 +52,12 @@ public class LanguageTag private constructor(
 					variants = variants
 				)
 
-			privateuse != null ->
+			privateuse != null -> {
+				require(language == null && script == null && region == null && variants.isEmpty() && extlangs.isEmpty() && extensions.isEmpty()) {
+					"Cannot set language, script, region, variants, extlangs, or extensions on a private-use-only tag"
+				}
 				forPrivateUse(privateuse = privateuse)
+			}
 
 			else ->
 				error("Either 'language' or 'privateuse' must be non-null.")
@@ -65,7 +83,7 @@ public class LanguageTag private constructor(
 		result = 31 * result + privateuse.hashCode()
 		result = 31 * result + region.hashCode()
 		result = 31 * result + script.hashCode()
-		result = 31 * result + variants.ifEmpty { null }?.map(String::toLowerCase).hashCode()
+		result = 31 * result + variants.map(String::lowercase).hashCode()
 
 		return result
 	}
@@ -112,8 +130,13 @@ public class LanguageTag private constructor(
 
 	public companion object {
 
+		/** The `x` prefix character for private-use subtags. */
 		public const val privateusePrefix: Char = 'x'
+
+		/** The `-` separator used between subtags. */
 		public const val separator: Char = '-'
+
+		/** The `und` prefix representing an undetermined language. */
 		public const val undeterminedPrefix: String = "und"
 
 		// https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
@@ -177,62 +200,81 @@ public class LanguageTag private constructor(
 		)
 
 
+		/** Lowercases an extension subtag, or returns `null` if blank. */
 		public fun canonicalizeExtension(extension: String?): String? =
-			extension?.ifEmpty { null }?.toLowerCase()
+			extension?.ifEmpty { null }?.lowercase()
 
 
+		/** Lowercases an extension singleton, or returns `null` if blank. */
 		public fun canonicalizeExtensionSingleton(singleton: String?): String? =
-			singleton?.ifEmpty { null }?.toLowerCase()
+			singleton?.ifEmpty { null }?.lowercase()
 
 
+		/** Lowercases an extension subtag value, or returns `null` if blank. */
 		public fun canonicalizeExtensionSubtag(subtag: String?): String? =
-			subtag?.ifEmpty { null }?.toLowerCase()
+			subtag?.ifEmpty { null }?.lowercase()
 
 
+		/** Canonicalizes and sorts a list of extension subtags. */
 		public fun canonicalizeExtensions(extensions: List<String>): List<String> =
 			extensions.ifEmpty { null }?.mapNotNull(::canonicalizeExtension)?.sorted().orEmpty()
 
 
+		/** Lowercases an extlang subtag, or returns `null` if blank. */
 		public fun canonicalizeExtlang(extlang: String?): String? =
-			extlang?.ifEmpty { null }?.toLowerCase()
+			extlang?.ifEmpty { null }?.lowercase()
 
 
+		/** Canonicalizes a list of extlang subtags. */
 		public fun canonicalizeExtlangs(extlangs: List<String>): List<String> =
 			extlangs.ifEmpty { null }?.mapNotNull(::canonicalizeExtlang).orEmpty()
 
 
+		/** Lowercases a language subtag, or returns `null` if blank. */
 		public fun canonicalizeLanguage(language: String?): String? =
-			language?.ifEmpty { null }?.toLowerCase()
+			language?.ifEmpty { null }?.lowercase()
 
 
+		/** Lowercases a private-use subtag sequence, or returns `null` if blank. */
 		public fun canonicalizePrivateuse(privateuse: String?): String? =
-			privateuse?.ifEmpty { null }?.toLowerCase()
+			privateuse?.ifEmpty { null }?.lowercase()
 
 
+		/** Lowercases a private-use prefix, or returns `null` if blank. */
 		public fun canonicalizePrivateusePrefix(prefix: String?): String? =
-			prefix?.ifEmpty { null }?.toLowerCase()
+			prefix?.ifEmpty { null }?.lowercase()
 
 
+		/** Lowercases a private-use subtag, or returns `null` if blank. */
 		public fun canonicalizePrivateuseSubtag(subtag: String?): String? =
-			subtag?.ifEmpty { null }?.toLowerCase()
+			subtag?.ifEmpty { null }?.lowercase()
 
 
+		/** Uppercases a region subtag, or returns `null` if blank. */
 		public fun canonicalizeRegion(region: String?): String? =
-			region?.ifEmpty { null }?.toUpperCase()
+			region?.ifEmpty { null }?.uppercase()
 
 
+		/** Title-cases a script subtag (first letter upper, rest lower), or returns `null` if blank. */
 		public fun canonicalizeScript(script: String?): String? =
 			script?.ifEmpty { null }?.toUppercaseFirstLowercaseRest()
 
 
+		/** Returns the variant subtag as-is (case-preserved per RFC 5646), or `null` if blank. */
 		public fun canonicalizeVariant(variant: String?): String? =
 			variant?.ifEmpty { null }
 
 
+		/** Canonicalizes a list of variant subtags. */
 		public fun canonicalizeVariants(variants: List<String>): List<String> =
 			variants.ifEmpty { null }?.mapNotNull(::canonicalizeVariant).orEmpty()
 
 
+		/**
+		 * Creates a [LanguageTag] from individual subtag components. All subtags are canonicalized.
+		 *
+		 * @throws IllegalArgumentException if any subtag is ill-formed per BCP 47.
+		 */
 		public fun forLanguage(
 			language: String,
 			script: String? = null,
@@ -241,40 +283,27 @@ public class LanguageTag private constructor(
 			extlangs: List<String> = emptyList(),
 			extensions: List<String> = emptyList(),
 			privateuse: String? = null,
-		): LanguageTag {
-			val canonicalLanguage = canonicalizeLanguage(language)
-			val canonicalScript = canonicalizeScript(script)
-			val canonicalRegion = canonicalizeRegion(region)
-			val canonicalVariants = canonicalizeVariants(variants)
-			val canonicalExtlangs = canonicalizeExtlangs(extlangs)
-			val canonicalExtensions = canonicalizeExtensions(extensions)
-			val canonicalPrivateuse = canonicalizePrivateuse(privateuse)
-
-			require(canonicalLanguage != null && isLanguage(canonicalLanguage)) { "Invalid language: $language" }
-			require(canonicalScript == null || isScript(canonicalScript)) { "Invalid script: $script" }
-			require(canonicalRegion == null || isRegion(canonicalRegion)) { "Invalid region: $region" }
-
-			for (variant in canonicalVariants)
-				require(isVariant(variant)) { "Invalid variant: $variant" }
-			for (extlang in canonicalExtlangs)
-				require(isExtlang(extlang)) { "Invalid extlang: $extlang" }
-			for (extension in canonicalExtensions)
-				require(isExtension(extension)) { "Invalid extension: $extension" }
-
-			require(canonicalPrivateuse == null || isPrivateuse(canonicalPrivateuse)) { "Invalid privateuse: $privateuse" }
-
-			return LanguageTag(
-				extensions = canonicalExtensions,
-				extlangs = canonicalExtlangs,
-				language = canonicalLanguage,
-				privateuse = canonicalPrivateuse,
-				region = canonicalRegion,
-				script = canonicalScript,
-				variants = canonicalVariants
-			)
-		}
+		): LanguageTag =
+			forLanguageInternal(
+				language = language,
+				script = script,
+				region = region,
+				variants = variants,
+				extlangs = extlangs,
+				extensions = extensions,
+				privateuse = privateuse,
+			) ?: throw IllegalArgumentException(forLanguageErrorMessage(
+				language = language,
+				script = script,
+				region = region,
+				variants = variants,
+				extlangs = extlangs,
+				extensions = extensions,
+				privateuse = privateuse,
+			))
 
 
+		/** Like [forLanguage], but returns `null` instead of throwing if any subtag is ill-formed. */
 		public fun forLanguageOrNull(
 			language: String,
 			script: String? = null,
@@ -283,6 +312,26 @@ public class LanguageTag private constructor(
 			extlangs: List<String> = emptyList(),
 			extensions: List<String> = emptyList(),
 			privateuse: String? = null,
+		): LanguageTag? =
+			forLanguageInternal(
+				language = language,
+				script = script,
+				region = region,
+				variants = variants,
+				extlangs = extlangs,
+				extensions = extensions,
+				privateuse = privateuse,
+			)
+
+
+		private fun forLanguageInternal(
+			language: String,
+			script: String?,
+			region: String?,
+			variants: List<String>,
+			extlangs: List<String>,
+			extensions: List<String>,
+			privateuse: String?,
 		): LanguageTag? {
 			val canonicalLanguage = canonicalizeLanguage(language)
 			val canonicalScript = canonicalizeScript(script)
@@ -292,18 +341,18 @@ public class LanguageTag private constructor(
 			val canonicalExtensions = canonicalizeExtensions(extensions)
 			val canonicalPrivateuse = canonicalizePrivateuse(privateuse)
 
-			require(canonicalLanguage != null && isLanguage(canonicalLanguage)) { return null }
-			require(canonicalScript == null || isScript(canonicalScript)) { return null }
-			require(canonicalRegion == null || isRegion(canonicalRegion)) { return null }
+			if (canonicalLanguage == null || !isLanguage(canonicalLanguage)) return null
+			if (canonicalScript != null && !isScript(canonicalScript)) return null
+			if (canonicalRegion != null && !isRegion(canonicalRegion)) return null
 
 			for (variant in canonicalVariants)
-				require(isVariant(variant)) { return null }
+				if (!isVariant(variant)) return null
 			for (extlang in canonicalExtlangs)
-				require(isExtlang(extlang)) { return null }
+				if (!isExtlang(extlang)) return null
 			for (extension in canonicalExtensions)
-				require(isExtension(extension)) { return null }
+				if (!isExtension(extension)) return null
 
-			require(canonicalPrivateuse == null || isPrivateuse(canonicalPrivateuse)) { return null }
+			if (canonicalPrivateuse != null && !isPrivateuse(canonicalPrivateuse)) return null
 
 			return LanguageTag(
 				extensions = canonicalExtensions,
@@ -317,29 +366,62 @@ public class LanguageTag private constructor(
 		}
 
 
-		public fun forPrivateUse(
-			privateuse: String,
-		): LanguageTag {
-			val canonicalPrivateuse = canonicalizePrivateuse(privateuse)
-			require(canonicalPrivateuse != null && isPrivateuse(privateuse)) { "Invalid privateuse: $privateuse" }
+		private fun forLanguageErrorMessage(
+			language: String,
+			script: String?,
+			region: String?,
+			variants: List<String>,
+			extlangs: List<String>,
+			extensions: List<String>,
+			privateuse: String?,
+		): String {
+			val canonicalLanguage = canonicalizeLanguage(language)
+			if (canonicalLanguage == null || !isLanguage(canonicalLanguage)) return "Invalid language: $language"
 
-			return LanguageTag(
-				extensions = emptyList(),
-				extlangs = emptyList(),
-				language = null,
-				privateuse = canonicalPrivateuse,
-				region = null,
-				script = null,
-				variants = emptyList()
-			)
+			val canonicalScript = canonicalizeScript(script)
+			if (canonicalScript != null && !isScript(canonicalScript)) return "Invalid script: $script"
+
+			val canonicalRegion = canonicalizeRegion(region)
+			if (canonicalRegion != null && !isRegion(canonicalRegion)) return "Invalid region: $region"
+
+			for (variant in canonicalizeVariants(variants))
+				if (!isVariant(variant)) return "Invalid variant: $variant"
+			for (extlang in canonicalizeExtlangs(extlangs))
+				if (!isExtlang(extlang)) return "Invalid extlang: $extlang"
+			for (extension in canonicalizeExtensions(extensions))
+				if (!isExtension(extension)) return "Invalid extension: $extension"
+
+			val canonicalPrivateuse = canonicalizePrivateuse(privateuse)
+			if (canonicalPrivateuse != null && !isPrivateuse(canonicalPrivateuse)) return "Invalid privateuse: $privateuse"
+
+			return "Invalid language tag"
 		}
 
 
+		/**
+		 * Creates a private-use-only [LanguageTag] (e.g. `x-custom`).
+		 *
+		 * @throws IllegalArgumentException if [privateuse] is ill-formed.
+		 */
+		public fun forPrivateUse(
+			privateuse: String,
+		): LanguageTag =
+			forPrivateUseInternal(privateuse)
+				?: throw IllegalArgumentException("Invalid privateuse: $privateuse")
+
+
+		/** Like [forPrivateUse], but returns `null` instead of throwing if [privateuse] is ill-formed. */
 		public fun forPrivateUseOrNull(
+			privateuse: String,
+		): LanguageTag? =
+			forPrivateUseInternal(privateuse)
+
+
+		private fun forPrivateUseInternal(
 			privateuse: String,
 		): LanguageTag? {
 			val canonicalPrivateuse = canonicalizePrivateuse(privateuse)
-			require(canonicalPrivateuse != null && isPrivateuse(privateuse)) { return null }
+			if (canonicalPrivateuse == null || !isPrivateuse(canonicalPrivateuse)) return null
 
 			return LanguageTag(
 				extensions = emptyList(),
@@ -353,7 +435,7 @@ public class LanguageTag private constructor(
 		}
 
 
-		// extension     = singleton 1*("-" (2*8alphanum))
+		/** Checks whether [extension] is a well-formed BCP 47 extension subtag (singleton + subtags). */
 		public fun isExtension(extension: String): Boolean {
 			val tokens = extension.splitToSequence(separator).iterator()
 
@@ -397,16 +479,12 @@ public class LanguageTag private constructor(
 			extlang.length == 3 && extlang.isAlpha()
 
 
-		// language      = 2*3ALPHA            ; shortest ISO 639 code
-		//                 ["-" extlang]       ; sometimes followed by
-		//                                     ; extended language subtags
-		//               / 4ALPHA              ; or reserved for future use
-		//               / 5*8ALPHA            ; or registered language subtag
+		/** Checks whether [language] is a well-formed BCP 47 primary language subtag (2-8 ALPHA). */
 		public fun isLanguage(language: String): Boolean =
 			language.length in 2 .. 8 && language.isAlpha()
 
 
-		// privateuse    = "x" 1*("-" (1*8alphanum))
+		/** Checks whether [privateuse] is a well-formed BCP 47 private-use subtag sequence (e.g. `x-custom`). */
 		public fun isPrivateuse(privateuse: String): Boolean {
 			val tokens = privateuse.splitToSequence(separator).iterator()
 
@@ -438,8 +516,7 @@ public class LanguageTag private constructor(
 			privateuse.length in 1 .. 8 && privateuse.isAlphaNumeric()
 
 
-		// region        = 2ALPHA              ; ISO 3166-1 code
-		//               / 3DIGIT              ; UN M.49 code
+		/** Checks whether [region] is a well-formed BCP 47 region subtag (2 ALPHA or 3 DIGIT). */
 		public fun isRegion(region: String): Boolean =
 			when (region.length) {
 				2 -> region.isAlpha()
@@ -448,13 +525,12 @@ public class LanguageTag private constructor(
 			}
 
 
-		// script        = 4ALPHA              ; ISO 15924 code
+		/** Checks whether [script] is a well-formed BCP 47 script subtag (4 ALPHA). */
 		public fun isScript(script: String): Boolean =
 			script.length == 4 && script.isAlpha()
 
 
-		// variant       = 5*8alphanum         ; registered variants
-		//               / (DIGIT 3alphanum)
+		/** Checks whether [variant] is a well-formed BCP 47 variant subtag. */
 		public fun isVariant(variant: String): Boolean =
 			when (variant.length) {
 				4 -> variant[0].isNumeric() && variant[1].isAlphaNumeric() && variant[2].isAlphaNumeric() && variant[3].isAlphaNumeric()
@@ -463,13 +539,22 @@ public class LanguageTag private constructor(
 			}
 
 
-		public fun parse(string: String): LanguageTag =
-			parseOrNull(string) ?: error("Ill-formed BCP 47 language tag: $string")
+		/**
+		 * Parses a BCP 47 language tag string. Grandfathered tags are replaced with modern equivalents.
+		 *
+		 * @throws IllegalStateException if the tag is ill-formed.
+		 */
+		public fun parse(string: String): LanguageTag {
+			require(string.length <= 256) { "Language tag too long: ${string.length} characters (max 256)" }
+			return parseOrNull(string) ?: error("Ill-formed BCP 47 language tag: $string")
+		}
 
 
+		/** Like [parse], but returns `null` instead of throwing if the tag is ill-formed. */
 		@Suppress("NAME_SHADOWING")
 		public fun parseOrNull(string: String): LanguageTag? {
-			val string = grandfathered[string.toLowerCase()] ?: string
+			if (string.length > 256) return null
+			val string = grandfathered[string.lowercase()] ?: string
 
 			val tokens = string.splitToSequence(separator).iterator()
 

@@ -1,8 +1,15 @@
 package io.fluidsonic.locale
 
 
+/**
+ * Resolves localized values by key and BCP 47 locale components.
+ *
+ * Values are looked up using an exact match on language, script, region, and variants.
+ * Use [asHierarchical] to wrap this resolver with automatic fallback through less-specific locale combinations.
+ */
 public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 
+	/** Resolves a value for [key] with the given locale components, or returns `null` if no match is found. */
 	public fun resolve(
 		key: Key,
 		language: String?,
@@ -14,8 +21,9 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 
 	public companion object {
 
+		/** Builds a [LocalizedValueResolver] backed by a map of key-value pairs associated with locale components. */
 		public inline fun <Key : Any, Value : Any> buildMap(
-			@BuilderInference builderAction: MapBuilder<Key, Value>.() -> Unit,
+			builderAction: MapBuilder<Key, Value>.() -> Unit,
 		): LocalizedValueResolver<Key, Value> =
 			MapBuilder<Key, Value>().apply(builderAction).build()
 	}
@@ -38,15 +46,18 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 	}
 
 
+	/** Builder for constructing a map-backed [LocalizedValueResolver]. */
 	public class MapBuilder<Key : Any, Value : Any> {
 
 		private var languageMaps: MutableMap<String?, MutableLanguageMap>? = null
 
 
+		/** Creates an immutable [LocalizedValueResolver] from the entries added so far. */
 		public fun build(): LocalizedValueResolver<Key, Value> =
 			MapResolver(languageMaps = languageMaps?.mapValues { it.value.toImmutable() })
 
 
+		/** Associates [value] with [key] for the given locale components. Subtags are canonicalized automatically. */
 		@Suppress("NAME_SHADOWING")
 		public fun put(key: Key, value: Value, language: String?, script: String? = null, region: String? = null, variants: List<String> = emptyList()) {
 			val language = LanguageTag.canonicalizeLanguage(language)
@@ -54,9 +65,13 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 			val region = LanguageTag.canonicalizeRegion(region)
 			val variants = LanguageTag.canonicalizeVariants(variants)
 
-			(languageMaps ?: hashMapOf<String?, MutableLanguageMap>().also { languageMaps = it })
+			getOrInit(languageMaps) { languageMaps = it }
 				.getOrPut(language, ::MutableLanguageMap).put(key = key, value = value, script = script, region = region, variants = variants)
 		}
+
+
+		private inline fun <K, V> getOrInit(field: MutableMap<K, V>?, setField: (MutableMap<K, V>) -> Unit): MutableMap<K, V> =
+			field ?: hashMapOf<K, V>().also(setField)
 
 
 		private inner class MutableLanguageMap {
@@ -69,16 +84,16 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 
 			fun put(key: Key, value: Value, script: String?, region: String?, variants: List<String>) {
 				when {
-					script != null -> (scriptMaps ?: hashMapOf<String?, MutableScriptMap>().also { scriptMaps = it })
+					script != null -> getOrInit(scriptMaps) { scriptMaps = it }
 						.getOrPut(script, ::MutableScriptMap).put(key = key, value = value, region = region, variants = variants)
 
-					region != null -> (regionMaps ?: hashMapOf<String?, MutableRegionMap>().also { regionMaps = it })
+					region != null -> getOrInit(regionMaps) { regionMaps = it }
 						.getOrPut(region, ::MutableRegionMap).put(key = key, value = value, variants = variants)
 
-					variants.isNotEmpty() -> (variantMaps ?: hashMapOf<List<String>, MutableMap<Key, Value>>().also { variantMaps = it })
+					variants.isNotEmpty() -> getOrInit(variantMaps) { variantMaps = it }
 						.getOrPut(variants, ::hashMapOf)[key] = value
 
-					else -> (values ?: hashMapOf<Key, Value>().also { values = it })[key] = value
+					else -> getOrInit(values) { values = it }[key] = value
 				}
 			}
 
@@ -100,10 +115,10 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 
 			fun put(key: Key, value: Value, variants: List<String>) {
 				when {
-					variants.isNotEmpty() -> (variantMaps ?: hashMapOf<List<String>, MutableMap<Key, Value>>().also { variantMaps = it })
+					variants.isNotEmpty() -> getOrInit(variantMaps) { variantMaps = it }
 						.getOrPut(variants, ::hashMapOf)[key] = value
 
-					else -> (values ?: hashMapOf<Key, Value>().also { values = it })[key] = value
+					else -> getOrInit(values) { values = it }[key] = value
 				}
 			}
 
@@ -124,13 +139,13 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 
 			fun put(key: Key, value: Value, region: String?, variants: List<String>) {
 				when {
-					region != null -> (regionMaps ?: hashMapOf<String?, MutableRegionMap>().also { regionMaps = it })
+					region != null -> getOrInit(regionMaps) { regionMaps = it }
 						.getOrPut(region, ::MutableRegionMap).put(key = key, value = value, variants = variants)
 
-					variants.isNotEmpty() -> (variantMaps ?: hashMapOf<List<String>, MutableMap<Key, Value>>().also { variantMaps = it })
+					variants.isNotEmpty() -> getOrInit(variantMaps) { variantMaps = it }
 						.getOrPut(variants, ::hashMapOf)[key] = value
 
-					else -> (values ?: hashMapOf<Key, Value>().also { values = it })[key] = value
+					else -> getOrInit(values) { values = it }[key] = value
 				}
 			}
 
@@ -189,6 +204,12 @@ public interface LocalizedValueResolver<in Key : Any, out Value : Any> {
 }
 
 
+/**
+ * Wraps this resolver with hierarchical fallback behavior.
+ *
+ * When a value is not found for a specific locale, the resolver progressively drops subtags
+ * (variants, then region, then script, then language) until a match is found or all options are exhausted.
+ */
 public fun <Key : Any, Value : Any> LocalizedValueResolver<Key, Value>.asHierarchical(): LocalizedValueResolver<Key, Value> =
 	when (this) {
 		is HierarchicalLocalizedValueResolver<Key, Value> -> this
@@ -196,5 +217,6 @@ public fun <Key : Any, Value : Any> LocalizedValueResolver<Key, Value>.asHierarc
 	}
 
 
+/** Resolves a value for [key] using the locale components from [locale]. */
 public fun <Key : Any, Value : Any> LocalizedValueResolver<Key, Value>.resolve(key: Key, locale: Locale): Value? =
 	resolve(key = key, language = locale.language, script = locale.script, region = locale.region, variants = locale.variants)

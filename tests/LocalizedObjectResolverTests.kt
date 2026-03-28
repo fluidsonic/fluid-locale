@@ -59,4 +59,23 @@ class LocalizedObjectResolverTests {
 
 		assertNull(resolver.resolve(key = "bar", language = null))
 	}
+
+
+	@Test
+	fun testResolveWithLocale() {
+		val resolver = LocalizedValueResolver.buildMap {
+			put(key = "greeting", value = "Hello", language = "en")
+			put(key = "greeting", value = "Hello US", language = "en", region = "US")
+		}
+
+		assertEquals(
+			expected = "Hello US",
+			actual = resolver.resolve(key = "greeting", locale = Locale.forLanguage("en", region = "US"))
+		)
+		assertEquals(
+			expected = "Hello",
+			actual = resolver.resolve(key = "greeting", locale = Locale.forLanguage("en"))
+		)
+		assertNull(resolver.resolve(key = "greeting", locale = Locale.forLanguage("de")))
+	}
 }

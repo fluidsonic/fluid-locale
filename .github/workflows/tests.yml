@@ -3,29 +3,22 @@ name: Tests
 on: [ push ]
 
 jobs:
-  darwin:
-    name: Darwin
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v1
-      - run: xcodebuild -version
-      - run: xcrun simctl list
-      - run: ./gradlew iosX64Test macosX64Test tvosX64Test watchosX64Test watchosX86Test
   js:
     name: JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - run: ./gradlew jsIrTest jsLegacyTest
+      - uses: actions/checkout@v4
+      - run: ./gradlew jsTest
   jdk:
     name: JDK ${{ matrix.java_version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java_version: [ '17' ]
+        java_version: [ '21' ]
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-java@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
+          distribution: 'temurin'
           java-version: ${{ matrix.java_version }}
       - run: ./gradlew jvmTest

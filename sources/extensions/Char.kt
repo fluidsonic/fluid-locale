@@ -1,5 +1,6 @@
 package io.fluidsonic.locale
 
+// ASCII-only character utilities for BCP 47 language tag processing. Avoids stdlib's Unicode/locale overhead.
 
 internal fun Char.isAlpha() =
 	this in 'a' .. 'z' || this in 'A' .. 'Z'
@@ -21,14 +22,14 @@ internal fun Char.isUpperCase() =
 	this in 'A' .. 'Z'
 
 
-internal fun Char.toLowerCase() =
+internal fun Char.lowercaseChar() =
 	when {
 		isUpperCase() -> this + 0x20
 		else -> this
 	}
 
 
-internal fun Char.toUpperCase() =
+internal fun Char.uppercaseChar() =
 	when {
 		isLowerCase() -> this - 0x20
 		else -> this

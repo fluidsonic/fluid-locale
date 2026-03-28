@@ -106,6 +106,14 @@ class LocaleTests {
 
 
 	@Test
+	fun testForLanguageTagOrNull() {
+		assertEquals(expected = "en-US", actual = Locale.forLanguageTagOrNull("en-US").toString())
+		assertNull(Locale.forLanguageTagOrNull("a-b-c-1-2-3"))
+		assertNull(Locale.forLanguageTagOrNull(""))
+	}
+
+
+	@Test
 	fun testToString() {
 		assertEquals(expected = "zh-Hant-CN-Variant", actual = Locale.forLanguageTag("ZH-HANT-CN-Variant").toString())
 	}

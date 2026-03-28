@@ -1,5 +1,6 @@
 package io.fluidsonic.locale
 
+// ASCII-only string utilities for BCP 47 language tag processing. Avoids stdlib's Unicode/locale overhead.
 
 internal fun String.isAlpha() =
 	all(Char::isAlpha)
@@ -33,19 +34,19 @@ internal inline fun String.mapCharactersIndexed(transform: (index: Int, characte
 }
 
 
-internal fun String.toLowerCase(): String {
+internal fun String.lowercase(): String {
 	if (all(Char::isLowerCase))
 		return this
 
-	return mapCharacters(Char::toLowerCase)
+	return mapCharacters(Char::lowercaseChar)
 }
 
 
-internal fun String.toUpperCase(): String {
+internal fun String.uppercase(): String {
 	if (all(Char::isUpperCase))
 		return this
 
-	return mapCharacters(Char::toUpperCase)
+	return mapCharacters(Char::uppercaseChar)
 }
 
 
@@ -64,8 +65,8 @@ internal fun String.toUppercaseFirstLowercaseRest(): String {
 
 	return mapCharactersIndexed { index, character ->
 		when (index) {
-			0 -> character.toUpperCase()
-			else -> character.toLowerCase()
+			0 -> character.uppercaseChar()
+			else -> character.lowercaseChar()
 		}
 	}
 }
